@@ -1,3 +1,8 @@
 pytorch
 scikit-learn
 notebook
+rpy2
+cmake
+r-rcppeigen
+r-glmnet
+r-lme4
