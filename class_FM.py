@@ -12,6 +12,7 @@ class FactorialModel(object):
         sigma=0.1,
         sparsity=0.5,
         beta_seed=42,
+        heredity = False
     ) -> None:
         self.n = n
         self.p_t = p_t
@@ -20,6 +21,7 @@ class FactorialModel(object):
         self.sigma = sigma
         self.sparsity = sparsity
         self.beta_seed = beta_seed
+        self.heredity = heredity
         # initialize beta random number generator
         self.rng_beta = np.random.default_rng(self.beta_seed)
         # initialize interaction expansion transformation
@@ -28,6 +30,17 @@ class FactorialModel(object):
         )
         _ = self.xfm.fit_transform(np.zeros((1, self.k), dtype="float32"))
         # sample ground truth betas
+        if heredity:
+            self.beta = self.rng_beta.normal(0, 1, self.k).astype(
+            "float32"
+            )
+            zero_indices = self.rng_beta.choice(
+                self.k,
+                size=int(self.xfm.n_output_features_ * self.sparsity),
+                replace=False,
+            )
+            self.beta[zero_indices] = 0.0
+
         self.beta = self.rng_beta.normal(0, 1, self.xfm.n_output_features_).astype(
             "float32"
         )
@@ -51,3 +64,12 @@ class FactorialModel(object):
         y = self.mu + self.eps
         return t, y
     
+
+
+
+xfm = preprocessing.PolynomialFeatures(
+  degree=3, interaction_only=True, include_bias=True
+)
+array = np.array([[1,0,1]])
+trans = xfm.fit_transform(array)
+print(trans)
