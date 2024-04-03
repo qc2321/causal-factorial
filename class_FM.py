@@ -31,25 +31,29 @@ class FactorialModel(object):
         _ = self.xfm.fit_transform(np.zeros((1, self.k), dtype="float32"))
         # sample ground truth betas
         if heredity:
-            self.beta = self.rng_beta.normal(0, 1, self.k).astype(
+            self.beta = self.rng_beta.normal(0, 1, self.xfm.n_output_features_).astype(
             "float32"
             )
+            self.mask = np.ones(self.beta.shape,dtype='float32')
+            
             zero_indices = self.rng_beta.choice(
                 self.k,
+                size=int(self.k * self.sparsity),
+                replace=False,
+            )
+            self.mask[zero_indices] = 0.0
+            self.beta = self.beta * self.mask
+
+        else:
+            self.beta = self.rng_beta.normal(0, 1, self.xfm.n_output_features_).astype(
+                "float32"
+            )
+            zero_indices = self.rng_beta.choice(
+                self.xfm.n_output_features_,
                 size=int(self.xfm.n_output_features_ * self.sparsity),
                 replace=False,
             )
             self.beta[zero_indices] = 0.0
-
-        self.beta = self.rng_beta.normal(0, 1, self.xfm.n_output_features_).astype(
-            "float32"
-        )
-        zero_indices = self.rng_beta.choice(
-            self.xfm.n_output_features_,
-            size=int(self.xfm.n_output_features_ * self.sparsity),
-            replace=False,
-        )
-        self.beta[zero_indices] = 0.0
 
     def sample(self, seed=None):
         self.rng = np.random.default_rng(seed)
@@ -67,9 +71,3 @@ class FactorialModel(object):
 
 
 
-xfm = preprocessing.PolynomialFeatures(
-  degree=3, interaction_only=True, include_bias=True
-)
-array = np.array([[1,0,1]])
-trans = xfm.fit_transform(array)
-print(trans)
