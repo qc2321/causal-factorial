@@ -34,34 +34,26 @@ class FactorialModel(object):
             self.beta = self.rng_beta.normal(0, 1, self.xfm.n_output_features_).astype(
             "float32"
             )
-            print(self.beta)
-            self.mask = np.ones((1,self.k),dtype='float32')
-
+            self.mask = np.ones(self.beta.shape,dtype='float32')
+            
             zero_indices = self.rng_beta.choice(
                 self.k,
                 size=int(self.k * self.sparsity),
                 replace=False,
             )
-            print(zero_indices)
-            self.mask[0,zero_indices] = 0.0
-            print(self.mask)
-            self.mask = self.xfm.transform(self.mask)
-            print(self.mask)
+            self.mask[zero_indices] = 0.0
             self.beta = self.beta * self.mask
-            self.beta = self.beta.flatten()
 
         else:
             self.beta = self.rng_beta.normal(0, 1, self.xfm.n_output_features_).astype(
                 "float32"
             )
-            print(self.beta)
             zero_indices = self.rng_beta.choice(
                 self.xfm.n_output_features_,
                 size=int(self.xfm.n_output_features_ * self.sparsity),
                 replace=False,
             )
             self.beta[zero_indices] = 0.0
-            print(zero_indices)
 
     def sample(self, seed=None):
         self.rng = np.random.default_rng(seed)
