@@ -18,6 +18,7 @@ class FactorialModel(object):
         self.p_t = p_t
         self.k = k
         self.sigma = sigma
+        self.sparsity = sparsity
         
         # initialize beta random number generator
         rng_beta = np.random.default_rng(beta_seed)
