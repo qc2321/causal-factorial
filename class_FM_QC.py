@@ -56,6 +56,9 @@ class FactorialModel(object):
                 replace=False,
             )
             self.beta[zero_indices] = 0.0
+        
+        norm = np.linalg.norm(self.beta)
+        self.beta = self.beta / norm
 
 
     def sample(self, seed=0):
