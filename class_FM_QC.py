@@ -64,7 +64,7 @@ class FactorialModel(object):
     def sample(self, seed=0):
         rng = np.random.default_rng(seed)
         # sample treatment array
-        t = rng.binomial(1, self.p_t, (self.n, self.k)).astype("float32")
+        t = rng.binomial(1, self.p_t, (self.n, self.k)).astype("float32") * 2 - 1
         # expand treatment array
         T = self.xfm.fit_transform(t)
         # build response surface
