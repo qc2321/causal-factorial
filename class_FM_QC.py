@@ -61,10 +61,11 @@ class FactorialModel(object):
         self.beta = self.beta / norm
 
 
-    def sample(self, seed=0):
+    def sample(self, seed=0, contrast_coding=False):
         rng = np.random.default_rng(seed)
         # sample treatment array
-        t = rng.binomial(1, self.p_t, (self.n, self.k)).astype("float32") * 2 - 1
+        t = rng.binomial(1, self.p_t, (self.n, self.k)).astype("float32")
+        t = t * 2 - 1 if contrast_coding else t
         # expand treatment array
         T = self.xfm.fit_transform(t)
         # build response surface
