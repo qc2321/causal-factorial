@@ -17,54 +17,61 @@ class FactorialModel(object):
         self.n = n
         self.p_t = p_t
         self.k = k
-        self.degree = degree
         self.sigma = sigma
         self.sparsity = sparsity
-        self.beta_seed = beta_seed
-        self.heredity = heredity
+        
         # initialize beta random number generator
-        self.rng_beta = np.random.default_rng(self.beta_seed)
+        rng_beta = np.random.default_rng(beta_seed)
+        
         # initialize interaction expansion transformation
         self.xfm = preprocessing.PolynomialFeatures(
-            degree=self.degree, interaction_only=True, include_bias=True
+            degree=degree, interaction_only=True, include_bias=True
         )
         _ = self.xfm.fit_transform(np.zeros((1, self.k), dtype="float32"))
+        
         # sample ground truth betas
         if heredity:
-            self.beta = self.rng_beta.normal(0, 1, self.xfm.n_output_features_).astype(
+            # assume interactions only exist if the main effects are present
+            self.beta = rng_beta.normal(0, 1, self.xfm.n_output_features_).astype(
             "float32"
             )
-            self.mask = np.ones(self.beta.shape,dtype='float32')
-            
-            zero_indices = self.rng_beta.choice(
+            mask = np.ones(self.k, dtype='float32')
+
+            zero_indices = rng_beta.choice(
                 self.k,
-                size=int(self.k * self.sparsity),
+                size=int(self.k * sparsity),
                 replace=False,
             )
-            self.mask[zero_indices] = 0.0
-            self.beta = self.beta * self.mask
+            mask[zero_indices] = 0.0
+            mask = self.xfm.transform(mask)
+            self.beta *= mask
 
         else:
-            self.beta = self.rng_beta.normal(0, 1, self.xfm.n_output_features_).astype(
+            self.beta = rng_beta.normal(0, 1, self.xfm.n_output_features_).astype(
                 "float32"
             )
-            zero_indices = self.rng_beta.choice(
+            zero_indices = rng_beta.choice(
                 self.xfm.n_output_features_,
-                size=int(self.xfm.n_output_features_ * self.sparsity),
+                size=int(self.xfm.n_output_features_ * sparsity),
                 replace=False,
             )
             self.beta[zero_indices] = 0.0
+        
+        norm = np.linalg.norm(self.beta)
+        self.beta = self.beta / norm
 
-    def sample(self, seed=None):
-        self.rng = np.random.default_rng(seed)
+
+    def sample(self, seed=0, contrast_coding=False):
+        rng = np.random.default_rng(seed)
         # sample treatment array
-        t = self.rng.binomial(1, self.p_t, (self.n, self.k)).astype("float32")
+        t = rng.binomial(1, self.p_t, (self.n, self.k)).astype("float32")
+        t = t * 2 - 1 if contrast_coding else t
         # expand treatment array
         T = self.xfm.fit_transform(t)
         # build response surface
         self.mu = T @ self.beta
         # sample outcome
-        self.eps = self.rng.normal(0, self.sigma, size=self.n)
+        self.eps = rng.normal(0, self.sigma, size=self.n)
         y = self.mu + self.eps
         return t, y
     
