@@ -49,28 +49,29 @@ cluster=Carlson$respcodeS, nway=2)
 ''')
 
 
-#one hot encode
+#one hot encode -> -1,1
 enc = OneHotEncoder(handle_unknown='ignore')
 X = carlson_df.iloc[:,1:-2]
-y = carlson_df.iloc[:,0].to_numpy()
-trans_x = enc.fit_transform(X).toarray()
-print(type(trans_x))
-print(type(y))
+y = carlson_df.iloc[:,0].to_numpy() *2 - 1
+trans_x = enc.fit_transform(X).toarray() *2 - 1
+
 #expand for fourier
 degree = 14
 pf = preprocessing.PolynomialFeatures(
     degree=degree, interaction_only=True, include_bias=True,
 )
-T = pf.fit_transform(trans_x) * 2 - 1
-
+T = pf.fit_transform(trans_x)
+print(T)
 
 # train test split
-T_train, T_test, y_train, y_test = train_test_split(T, y, test_size=0.3, random_state=42)
+T_train, T_test, y_train, y_test = train_test_split(T, y, test_size=0.1)
 print(T_train)
 print(y_train)
-# alpha_cv = [0.001, 0.01, 0.1, 0.5]
+
+
+
 #logistic regression
-model = LogisticRegression(penalty='l1',C = .06, solver = 'liblinear')
+model = LogisticRegression(penalty='l1',C = .1, solver = 'liblinear')
 model.fit(T_train, y_train)
 
 y_pred = model.predict(T_test)
@@ -81,7 +82,7 @@ import numpy as np
 nonzero_indices = np.nonzero(model.coef_)
 
 # Retrieve the non-zero values using the indices
-nonzero_values = model.coef_[nonzero_indices]
+# nonzero_values = model.coef_[nonzero_indices]
 # print(enc.get_feature_names_out())
 # feature_dict = {}
 # for item in zip(enc.get_feature_names_out(), pf.get_feature_names_out()[1:15]):
@@ -96,11 +97,12 @@ nonzero_values = model.coef_[nonzero_indices]
     
 
 # linear regression
-model2 = Lasso(alpha=0.011)
+model2 = Lasso(alpha=0.09)
 model2.fit(T_train, y_train)
 y_pred = model2.predict(T_test)
 # Retrieve the non-zero values using the indices
 nonzero_indices = np.nonzero(model2.coef_)
+print(nonzero_indices)
 nonzero_values = model2.coef_[nonzero_indices]
 # print(enc.get_feature_names_out())
 feature_dict = {}
@@ -116,7 +118,7 @@ for index, value in zip(nonzero_indices[0], nonzero_values):
 count = y_test.shape[0]
 correct = 0
 for pred, act in zip(y_pred,y_test):
-    if (pred >=0.5 and act ==1) or (pred <0.5 and act ==0):
+    if (pred >=0 and act ==1) or (pred <0 and act ==-1):
         correct+=1
 print(correct/count)
 
@@ -133,7 +135,7 @@ y_train = pd.DataFrame(y_train)
 def forward_selection(X, y, p_value):
     kept_features = []
     total_features = X.columns.tolist()
-    print(total_features)
+    # print(total_features)
     # print(y)
     # print(X)
 
@@ -159,13 +161,13 @@ def interactions(X, y, p_value, features):
     original_features = features
     combo_features = []
     for feature1, feature2 in combinations(original_features,2):
-        print(feature1, feature2)
+        # print(feature1, feature2)
         X[f"{feature1}*{feature2}"] = X[feature1] * X[feature2]
         combo_features.append(f"{feature1}*{feature2}")
     kept_features = []
     # print(y)
     # print(X)
-    X = X * 2 - 1
+    X = X
     # print(X)
     while True:
         remaining_features = list(set(combo_features) - set(kept_features))
@@ -187,16 +189,16 @@ def interactions(X, y, p_value, features):
 
 kept_features = forward_selection(T_train,y_train,0.06)
 # print(forward_selection(T_train, y_train, 0.06))
-print(feature_dict)
-print(kept_features)
+# print(feature_dict)
+# print(kept_features)
 T = trans_x
-print(T.shape)
-print(y.shape)
+# print(T.shape)
+# print(y.shape)
 
 T_train, T_test, y_train, y_test = train_test_split(T, y, test_size=0.3, random_state=42)
 T_train = pd.DataFrame(T_train)
 y_train = pd.DataFrame(y_train)
-print(T_train[kept_features])
+# print(T_train[kept_features])
 print(interactions(T_train, y_train, 0.03, kept_features))
 
 
