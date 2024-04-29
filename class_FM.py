@@ -12,7 +12,8 @@ class FactorialModel(object):
         sigma=0.1,
         sparsity=0.5,
         beta_seed=42,
-        heredity = False
+        heredity = False,
+        antiheredity = False
     ) -> None:
         self.n = n
         self.p_t = p_t
@@ -45,8 +46,20 @@ class FactorialModel(object):
             mask[zero_indices] = 0.0
             mask = self.xfm.transform(mask)
             self.beta *= mask
-
-        else:
+        
+        elif antiheredity:
+            self.beta = rng_beta.normal(0, 1, self.xfm.n_output_features_).astype(
+                "float32"
+            )
+            self.beta[0:k+1] = 0.0
+            zero_indices = rng_beta.choice(
+                self.xfm.n_output_features_,
+                size=int(self.xfm.n_output_features_ * sparsity - k - 1),
+                replace=False,
+            )
+            self.beta[zero_indices] = 0.0
+        
+        elif not heredity and not antiheredity:
             self.beta = rng_beta.normal(0, 1, self.xfm.n_output_features_).astype(
                 "float32"
             )
@@ -74,7 +87,7 @@ class FactorialModel(object):
         self.eps = rng.normal(0, self.sigma, size=self.n)
         y = self.mu + self.eps
         return t, y
-    
+
 
 
 
