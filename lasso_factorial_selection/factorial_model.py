@@ -17,11 +17,11 @@ class FactorialModel():
         self.pf = preprocessing.PolynomialFeatures(
             degree=degree, interaction_only=True, include_bias=True
         )
-        _ = self.pf.fit_transform(np.zeros((1, self.k), dtype="float32"))
+        _ = self.pf.fit_transform(np.zeros((1, self.k), dtype="float64"))
         
         # initialize beta
         rng_beta = np.random.default_rng(self.seed)
-        self.beta = rng_beta.normal(0, 1, self.pf.n_output_features_).astype("float32")
+        self.beta = rng_beta.normal(0, 1, self.pf.n_output_features_).astype("float64")
 
         # impose sparsity on beta
         zero_indices = rng_beta.choice(
@@ -39,7 +39,7 @@ class FactorialModel():
     def sample_and_split_data(self, contrast_coding=False, test_size=0.2):
         # sample treatment array
         rng = np.random.default_rng(self.seed)
-        t = rng.binomial(1, self.p_t, (self.n, self.k)).astype("float32")
+        t = rng.binomial(1, self.p_t, (self.n, self.k)).astype("float64")
         t = t * 2 - 1 if contrast_coding else t
 
         # expand treatment array
@@ -55,7 +55,7 @@ class FactorialModel():
 
 
     def fit_lasso(self, alphas=None):
-        self.lasso = LassoCV(alphas=alphas, cv=5)
+        self.lasso = LassoCV(alphas=alphas, max_iter=10000, cv=5)
         self.lasso.fit(self.T_train, self.y_train)
         self.beta_hat = self.lasso.coef_
         beta_mask = self.pf.fit_transform(self.pf.powers_)
