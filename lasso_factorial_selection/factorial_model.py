@@ -4,13 +4,15 @@ from sklearn.linear_model import LassoCV
 from sklearn.model_selection import train_test_split
 
 
-class FactorialModel():
-    def __init__(self, n, p_t=0.5, k=2, degree=2, sigma=0.1, sparsity=0.5, seed=None):
+class FactorialModel:
+    def __init__(self, n, p_t=0.5, k=2, degree=2, sigma=0.1, sparsity=0.5,
+                 contrast_coding=True, seed=None):
         self.n = n
         self.p_t = p_t
         self.k = k
         self.sigma = sigma
         self.sparsity = sparsity
+        self.contrast_coding = contrast_coding
         self.seed = seed
                 
         # initialize interaction expansion transformation
@@ -36,11 +38,11 @@ class FactorialModel():
         self.beta = self.beta / norm
 
 
-    def sample_and_split_data(self, contrast_coding=False, test_size=0.2):
+    def sample_and_split_data(self, test_size=0.2):
         # sample treatment array
         rng = np.random.default_rng(self.seed)
         t = rng.binomial(1, self.p_t, (self.n, self.k)).astype("float64")
-        t = t * 2 - 1 if contrast_coding else t
+        t = t * 2 - 1 if self.contrast_coding else t
 
         # expand treatment array
         self.T = self.pf.fit_transform(t)
@@ -65,7 +67,7 @@ class FactorialModel():
     def predict(self):
         self.y_pred = self.lasso.predict(self.T_test)
     
-
+    
     def compute_mse(self):
         self.mse = np.mean((self.y_pred - self.y_test) ** 2)
 
