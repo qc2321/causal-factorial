@@ -21,6 +21,8 @@ class FactorialModel:
         )
         _ = self.pf.fit_transform(np.zeros((1, self.k), dtype="float64"))
         
+
+    def sample_beta(self):
         # initialize beta
         rng_beta = np.random.default_rng(self.seed)
         self.beta = rng_beta.normal(0, 1, self.pf.n_output_features_).astype("float64")
@@ -28,7 +30,7 @@ class FactorialModel:
         # impose sparsity on beta
         zero_indices = rng_beta.choice(
             self.pf.n_output_features_,
-            size=int(self.pf.n_output_features_ * sparsity),
+            size=int(self.pf.n_output_features_ * self.sparsity),
             replace=False,
         )
         self.beta[zero_indices] = 0.0
