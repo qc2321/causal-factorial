@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.special import comb
 from sklearn import preprocessing
 from sklearn.linear_model import LassoCV
 from sklearn.model_selection import train_test_split
@@ -10,6 +11,7 @@ class FactorialModel:
         self.n = n
         self.p_t = p_t
         self.k = k
+        self.degree = degree
         self.sigma = sigma
         self.sparsity = sparsity
         self.contrast_coding = contrast_coding
@@ -17,12 +19,12 @@ class FactorialModel:
                 
         # initialize interaction expansion transformation
         self.pf = preprocessing.PolynomialFeatures(
-            degree=degree, interaction_only=True, include_bias=True
+            degree=self.degree, interaction_only=True, include_bias=True
         )
         _ = self.pf.fit_transform(np.zeros((1, self.k), dtype="float64"))
         
 
-    def sample_beta(self):
+    def sample_normal_beta(self):
         # initialize beta
         rng_beta = np.random.default_rng(self.seed)
         self.beta = rng_beta.normal(0, 1, self.pf.n_output_features_).astype("float64")
@@ -34,6 +36,23 @@ class FactorialModel:
             replace=False,
         )
         self.beta[zero_indices] = 0.0
+
+        # normalize beta
+        norm = np.linalg.norm(self.beta)
+        self.beta = self.beta / norm
+
+
+    def sample_skewed_beta(self, min_active_degree=1):
+        # initialize beta
+        rng_beta = np.random.default_rng(self.seed)
+        self.beta = rng_beta.normal(0, 1, self.pf.n_output_features_).astype("float64")
+
+        # zero out coefficients for low order terms
+        start = 1
+        for i in range(1, min_active_degree):
+            end = start + int(comb(self.k, i))
+            self.beta[start:end] = 0.0
+            start = end
 
         # normalize beta
         norm = np.linalg.norm(self.beta)

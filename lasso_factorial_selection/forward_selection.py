@@ -6,7 +6,7 @@ from factorial_model import FactorialModel
 
 
 class ForwardSelection:
-    def __init__(self, T, y, max_order, alpha=0.1, strong_heredity=False):
+    def __init__(self, T, y, max_order, alpha=0.1, strong_heredity=True):
         self.T = T
         self.y = y
         self.D = max_order
@@ -31,6 +31,8 @@ class ForwardSelection:
             self.drop_interactions_by_tvalues()
             parent_idx = child_idx
             # self.selected[2] = 0    # DEBUG: remove this line
+        model = sm.OLS(self.y, self.T * self.selected)
+        self.results = model.fit()
 
     
     def include_d_order_terms(self, d, child_idx):
@@ -65,9 +67,16 @@ class ForwardSelection:
 
 
     def drop_interactions_by_tvalues(self):
-        X = self.T * self.selected
-        model = sm.OLS(self.y, X)
+        model = sm.OLS(self.y, self.T * self.selected)
         results = model.fit()
         mask = results.tvalues > self.alpha
         self.selected *= mask
+
+
+    def predict(self, T_test):
+        self.y_pred = self.results.predict(T_test)
+    
+
+    def compute_mse(self, y_test):
+        self.mse = np.mean((self.y_pred - y_test) ** 2)
     
