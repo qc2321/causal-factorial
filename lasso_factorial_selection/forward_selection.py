@@ -6,7 +6,7 @@ from factorial_model import FactorialModel
 
 
 class ForwardSelection:
-    def __init__(self, T, y, max_order, alpha=0.1, strong_heredity=True):
+    def __init__(self, T, y, max_order, alpha=0.05, strong_heredity=False):
         self.T = T
         self.y = y
         self.D = max_order
@@ -28,9 +28,9 @@ class ForwardSelection:
             child_idx = parent_idx + int(comb(self.k, d - 1))
             self.include_d_order_terms(d, child_idx)
             self.impose_heredity(d, parent_idx, child_idx)
-            self.drop_interactions_by_tvalues()
+            self.drop_interactions_by_pvalues(child_idx)
             parent_idx = child_idx
-            # self.selected[2] = 0    # DEBUG: remove this line
+            # self.selected[2] = 0      # DEBUG: test with one main term dropped
         model = sm.OLS(self.y, self.T * self.selected)
         self.results = model.fit()
 
@@ -49,13 +49,6 @@ class ForwardSelection:
 
         if self.strong_heredity:
             for i, child in enumerate(children):
-                for parent in parents:
-                    if set(parent).issubset(child):
-                        break
-                else:
-                    self.selected[child_idx + i] = 0
-        else:
-            for i, child in enumerate(children):
                 count = 0
                 for parent in parents:
                     if set(parent).issubset(child):
@@ -64,13 +57,24 @@ class ForwardSelection:
                         break
                 else:
                     self.selected[child_idx + i] = 0
+        else:
+            for i, child in enumerate(children):
+                for parent in parents:
+                    if set(parent).issubset(child):
+                        break
+                else:
+                    self.selected[child_idx + i] = 0
 
 
-    def drop_interactions_by_tvalues(self):
-        model = sm.OLS(self.y, self.T * self.selected)
+    def drop_interactions_by_pvalues(self, child_idx):
+        adjusted_T = self.T[:, self.selected.astype(bool)]
+        model = sm.OLS(self.y, adjusted_T)
         results = model.fit()
-        mask = results.tvalues > self.alpha
-        self.selected *= mask
+
+        selected_indices = np.where(self.selected)[0]
+        mask_indices = np.where(selected_indices >= child_idx)[0]
+        mask = results.pvalues[mask_indices] < self.alpha
+        self.selected[mask_indices] *= mask
 
 
     def predict(self, T_test):

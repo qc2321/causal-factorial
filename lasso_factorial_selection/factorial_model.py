@@ -59,6 +59,7 @@ class FactorialModel:
         self.beta = self.beta / norm
 
 
+    # TODO: Sample with different seeds to get statistics for mse or other metrics
     def sample_and_split_data(self, test_size=0.2):
         # sample treatment array
         rng = np.random.default_rng(self.seed)
