@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 
 class FactorialModel:
     def __init__(self, n, p_t=0.5, k=2, degree=2, sigma=0.1, sparsity=0.5,
-                 contrast_coding=True, seed=None):
+                 contrast_coding=True, beta_seed=None):
         self.n = n
         self.p_t = p_t
         self.k = k
@@ -15,7 +15,7 @@ class FactorialModel:
         self.sigma = sigma
         self.sparsity = sparsity
         self.contrast_coding = contrast_coding
-        self.seed = seed
+        self.beta_seed = beta_seed
                 
         # initialize interaction expansion transformation
         self.pf = preprocessing.PolynomialFeatures(
@@ -26,7 +26,7 @@ class FactorialModel:
 
     def sample_normal_beta(self):
         # initialize beta
-        rng_beta = np.random.default_rng(self.seed)
+        rng_beta = np.random.default_rng(self.beta_seed)
         self.beta = rng_beta.normal(0, 1, self.pf.n_output_features_).astype("float64")
 
         # impose sparsity on beta
@@ -44,7 +44,7 @@ class FactorialModel:
 
     def sample_skewed_beta(self, min_active_degree=1):
         # initialize beta
-        rng_beta = np.random.default_rng(self.seed)
+        rng_beta = np.random.default_rng(self.beta_seed)
         self.beta = rng_beta.normal(0, 1, self.pf.n_output_features_).astype("float64")
 
         # zero out coefficients for low order terms
@@ -59,10 +59,9 @@ class FactorialModel:
         self.beta = self.beta / norm
 
 
-    # TODO: Sample with different seeds to get statistics for mse or other metrics
-    def sample_and_split_data(self, test_size=0.2):
+    def sample_and_split_data(self, test_size=0.2, seed=None):
         # sample treatment array
-        rng = np.random.default_rng(self.seed)
+        rng = np.random.default_rng(seed)
         t = rng.binomial(1, self.p_t, (self.n, self.k)).astype("float64")
         t = t * 2 - 1 if self.contrast_coding else t
 
@@ -74,7 +73,7 @@ class FactorialModel:
         eps = rng.normal(0, self.sigma, size=self.n)
         self.y = mu + eps
 
-        list_of_splits = train_test_split(self.T, self.y, test_size=test_size, random_state=self.seed)
+        list_of_splits = train_test_split(self.T, self.y, test_size=test_size, random_state=seed)
         self.T_train, self.T_test, self.y_train, self.y_test = list_of_splits
 
 
@@ -89,7 +88,9 @@ class FactorialModel:
     def predict(self):
         self.y_pred = self.lasso.predict(self.T_test)
     
-    
     def compute_mse(self):
         self.mse = np.mean((self.y_pred - self.y_test) ** 2)
+
+    def compute_r2(self):
+        self.r2 = self.lasso.score(self.T_test, self.y_test)
 
