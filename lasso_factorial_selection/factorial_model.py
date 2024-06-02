@@ -6,12 +6,12 @@ from sklearn.model_selection import train_test_split
 
 
 class FactorialModel:
-    def __init__(self, n, p_t=0.5, k=2, degree=2, sigma=0.1, sparsity=0.5,
+    def __init__(self, n, k=2, degree=2, p_t=0.5, sigma=0.1, sparsity=0.5,
                  contrast_coding=True, beta_seed=None):
         self.n = n
-        self.p_t = p_t
         self.k = k
         self.degree = degree
+        self.p_t = p_t
         self.sigma = sigma
         self.sparsity = sparsity
         self.contrast_coding = contrast_coding
@@ -70,10 +70,18 @@ class FactorialModel:
 
         # sample outcome with noise
         mu = self.T @ self.beta
-        eps = rng.normal(0, self.sigma, size=self.n)
-        self.y = mu + eps
+        self.eps = rng.normal(0, self.sigma, size=self.n)
+        self.y = mu + self.eps
 
         list_of_splits = train_test_split(self.T, self.y, test_size=test_size, random_state=seed)
+        self.T_train, self.T_test, self.y_train, self.y_test = list_of_splits
+
+
+    def convert_and_split_data(self, t, y, is_dummy_coded=True, test_size=0.2, seed=None):
+        if is_dummy_coded and self.contrast_coding:
+            t = t * 2 - 1
+        self.T = self.pf.fit_transform(t)
+        list_of_splits = train_test_split(self.T, y, test_size=test_size, random_state=seed)
         self.T_train, self.T_test, self.y_train, self.y_test = list_of_splits
 
 
