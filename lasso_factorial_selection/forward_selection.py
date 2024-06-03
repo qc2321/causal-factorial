@@ -20,7 +20,7 @@ class ForwardSelection:
         assert np.all(np.isin(np.unique(self.T), [-1, 1])), "Input must be contrast coded"
 
     
-    def forward_selection(self):
+    def forward_selection(self, logistic=False):
         self.selected = np.zeros(self.num_coeffs, dtype=int)
         self.selected[0] = 1
         parent_idx = 0
@@ -28,11 +28,14 @@ class ForwardSelection:
             child_idx = parent_idx + int(comb(self.k, d - 1))
             self.include_d_order_terms(d, child_idx)
             self.impose_heredity(d, parent_idx, child_idx)
-            self.drop_interactions_by_pvalues(child_idx)
+            self.drop_interactions_by_pvalues(child_idx, logistic)
             parent_idx = child_idx
-            # self.selected[2] = 0      # DEBUG: test with one main term dropped
-        model = sm.OLS(self.y, self.T * self.selected)
-        self.results = model.fit()
+        if logistic:
+            model = sm.Logit(self.y, self.T * self.selected)
+            self.results = model.fit(method='bfgs', skip_hessian=True)
+        else:
+            model = sm.OLS(self.y, self.T * self.selected)
+            self.results = model.fit()
 
     
     def include_d_order_terms(self, d, child_idx):
@@ -66,10 +69,14 @@ class ForwardSelection:
                     self.selected[child_idx + i] = 0
 
 
-    def drop_interactions_by_pvalues(self, child_idx):
+    def drop_interactions_by_pvalues(self, child_idx, logistic):
         adjusted_T = self.T[:, self.selected.astype(bool)]
-        model = sm.OLS(self.y, adjusted_T)
-        results = model.fit()
+        if logistic:
+            model = sm.Logit(self.y, adjusted_T)
+            results = model.fit(method='bfgs', skip_hessian=True)
+        else:
+            model = sm.OLS(self.y, adjusted_T)
+            results = model.fit()
 
         selected_indices = np.where(self.selected)[0]
         mask_indices = np.where(selected_indices >= child_idx)[0]

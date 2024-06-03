@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.special import comb
 from sklearn import preprocessing
-from sklearn.linear_model import LassoCV
+from sklearn.linear_model import LassoCV, LogisticRegressionCV
 from sklearn.model_selection import train_test_split
 
 
@@ -85,10 +85,16 @@ class FactorialModel:
         self.T_train, self.T_test, self.y_train, self.y_test = list_of_splits
 
 
-    def fit_lasso(self, alphas=None):
-        self.lasso = LassoCV(alphas=alphas, max_iter=10000, cv=5)
+    def fit_lasso(self, logistic=False, alphas=None):
+        if logistic:
+            self.lasso = LogisticRegressionCV(cv=5, penalty='l1', solver='liblinear', max_iter=10000)
+        else:
+            self.lasso = LassoCV(alphas=alphas, max_iter=10000, cv=5)
         self.lasso.fit(self.T_train, self.y_train)
-        self.beta_hat = self.lasso.coef_
+        if logistic:
+            self.beta_hat = self.lasso.coef_[0]
+        else:
+            self.beta_hat = self.lasso.coef_
         beta_mask = self.pf.fit_transform(self.pf.powers_)
         self.expected_outcomes = beta_mask @ self.beta_hat
 
