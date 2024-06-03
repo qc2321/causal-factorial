@@ -91,6 +91,6 @@ class ForwardSelection:
         self.mse = np.mean((self.y_pred - y_test) ** 2)
 
     def compute_r2(self):
-        self.r2 = self.results.rsquared     # TODO: check if test data is needed for this
+        self.r2 = self.results.rsquared
     
     

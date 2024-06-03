@@ -87,9 +87,10 @@ class FactorialModel:
 
     def fit_lasso(self, logistic=False, alphas=None):
         if logistic:
-            self.lasso = LogisticRegressionCV(cv=5, penalty='l1', solver='liblinear', max_iter=10000)
+            self.lasso = LogisticRegressionCV(fit_intercept=False, cv=5, penalty='l1',
+                                              solver='liblinear', max_iter=10000)
         else:
-            self.lasso = LassoCV(alphas=alphas, max_iter=10000, cv=5)
+            self.lasso = LassoCV(alphas=alphas, fit_intercept=False, max_iter=10000, cv=5)
         self.lasso.fit(self.T_train, self.y_train)
         if logistic:
             self.beta_hat = self.lasso.coef_[0]
@@ -106,5 +107,5 @@ class FactorialModel:
         self.mse = np.mean((self.y_pred - self.y_test) ** 2)
 
     def compute_r2(self):
-        self.r2 = self.lasso.score(self.T_test, self.y_test)
+        self.r2 = self.lasso.score(self.T_train, self.y_train)
 
