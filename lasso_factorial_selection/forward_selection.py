@@ -18,7 +18,6 @@ class ForwardSelection:
         assert np.log2(self.num_coeffs) % 1 == 0, "Number of coeffs must be a power of 2"
         assert self.D <= self.k, "Maximum order must be less than or equal to number of factors (k)"
         assert np.all(np.isin(np.unique(self.T), [-1, 1])), "Input must be contrast coded"
-
     
     def forward_selection(self, logistic=False):
         self.selected = np.zeros(self.num_coeffs, dtype=int)
@@ -36,20 +35,17 @@ class ForwardSelection:
         else:
             model = sm.OLS(self.y, self.T * self.selected)
             self.results = model.fit()
-
-    
+  
     def include_d_order_terms(self, d, child_idx):
         num_new_indices = int(comb(self.k, d))
         for i in range(num_new_indices):
             self.selected[i + child_idx] = 1
-
-    
+  
     def impose_heredity(self, d, parent_idx, child_idx):
         parent_mask = self.selected[parent_idx:child_idx]
         parents = np.array(list(it.combinations(np.arange(1, self.k + 1), d - 1)))
         parents = parents[parent_mask.astype(bool)] if d > 1 else parents
         children = np.array(list(it.combinations(np.arange(1, self.k + 1), d)))
-
         if self.strong_heredity:
             for i, child in enumerate(children):
                 count = 0
@@ -68,7 +64,6 @@ class ForwardSelection:
                 else:
                     self.selected[child_idx + i] = 0
 
-
     def drop_interactions_by_pvalues(self, child_idx, logistic):
         adjusted_T = self.T[:, self.selected.astype(bool)]
         if logistic:
@@ -77,12 +72,10 @@ class ForwardSelection:
         else:
             model = sm.OLS(self.y, adjusted_T)
             results = model.fit()
-
         selected_indices = np.where(self.selected)[0]
         mask_indices = np.where(selected_indices >= child_idx)[0]
         mask = results.pvalues[mask_indices] < self.alpha
         self.selected[mask_indices] *= mask
-
 
     def predict(self, T_test):
         self.y_pred = self.results.predict(T_test)
