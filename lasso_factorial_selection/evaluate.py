@@ -1,7 +1,3 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from statsmodels.stats.weightstats import ztest
-from factorial_model import FactorialModel
 from forward_selection import ForwardSelection
 
 
