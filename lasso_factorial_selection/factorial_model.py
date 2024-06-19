@@ -24,6 +24,14 @@ class FactorialModel:
         _ = self.pf.fit_transform(np.zeros((1, self.k), dtype="float64"))
         
 
+    def get_beta_labels(self):
+        powers = self.pf.powers_
+        beta_labels = ['0']
+        for i in range(1, powers.shape[0]):
+            beta_labels.append(' '.join(f't{j+1}' for j in range(powers.shape[1]) if powers[i][j] != 0))
+        return beta_labels
+
+
     def sample_normal_beta(self):
         # initialize beta
         rng_beta = np.random.default_rng(self.beta_seed)
