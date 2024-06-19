@@ -2,20 +2,25 @@ import numpy as np
 import itertools as it
 import statsmodels.api as sm
 from scipy.special import comb
-from factorial_model import FactorialModel
+
+
+def pascal_sum(k, max_order):
+    result = 0
+    for i in range(max_order + 1):
+        result += comb(k, i)
+    return int(result)
 
 
 class ForwardSelection:
-    def __init__(self, T, y, max_order, alpha=0.05, strong_heredity=False):
+    def __init__(self, T, y, k, max_order, alpha=0.05, strong_heredity=False):
         self.T = T
         self.y = y
+        self.k = k
         self.D = max_order
         self.alpha = alpha
         self.strong_heredity = strong_heredity
         self.n = T.shape[0]
         self.num_coeffs = T.shape[1]
-        self.k = int(np.log2(self.num_coeffs))
-        assert np.log2(self.num_coeffs) % 1 == 0, "Number of coeffs must be a power of 2"
         assert self.D <= self.k, "Maximum order must be less than or equal to number of factors (k)"
         assert np.all(np.isin(np.unique(self.T), [-1, 1])), "Input must be contrast coded"
 

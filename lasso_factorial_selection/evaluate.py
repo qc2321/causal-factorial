@@ -14,21 +14,22 @@ def sample_beta(fm, sampling_method=1, min_degree=2):
             raise ValueError(f"Invalid beta_sampling_method: {sampling_method}")
         
 
-def evaluate_lasso(fm, seed=None):
+def evaluate_lasso(fm, logistic=False):
     """Evaluate Lasso model from FactorialModel instance"""
-    fm.sample_and_split_data(seed=seed)
-    fm.fit_lasso()
+    fm.fit_lasso(logistic=logistic)
     fm.predict()
     fm.compute_mse()
-    fm.compute_r2()
+    if not logistic:
+        fm.compute_r2()
 
 
-def evaluate_forward_selection(fs, T_test, y_test):
+def evaluate_forward_selection(fs, T_test, y_test, logistic=False):
     """Evaluate ForwardSelection model from given test data"""
-    fs.forward_selection()
+    fs.forward_selection(logistic=logistic)
     fs.predict(T_test)
     fs.compute_mse(y_test)
-    fs.compute_r2()
+    if not logistic:
+        fs.compute_r2()
 
 
 def evaluate(fm, num_trials, seed=None, strong_heredity=False):
@@ -42,14 +43,16 @@ def evaluate(fm, num_trials, seed=None, strong_heredity=False):
     lasso_expected_outcomes = []
     fs_expected_outcomes = []
 
-    for i in range(num_trials):
-        evaluate_lasso(fm, seed=seed)
+    for _ in range(num_trials):
+        fm.sample_and_split_data(seed=seed)
+
+        evaluate_lasso(fm)
         lasso_mses.append(fm.mse)
         lasso_r2s.append(fm.r2)
         lasso_betas.append(fm.beta_hat)
         lasso_expected_outcomes.append(fm.expected_outcomes)
 
-        fs = ForwardSelection(fm.T_train, fm.y_train, fm.k, strong_heredity=strong_heredity)
+        fs = ForwardSelection(fm.T_train, fm.y_train, fm.k, fm.degree, strong_heredity=strong_heredity)
         evaluate_forward_selection(fs, fm.T_test, fm.y_test)
         fs_mses.append(fs.mse)
         fs_r2s.append(fs.r2)
